@@ -91,13 +91,11 @@ const actualizarNota = async (req, res) => {
 // 4. ELIMINAR una nota (DELETE)
 // ERROR INTENCIONAL: VULNERABILIDAD SQL INJECTION
 const eliminarNota = async (req, res) => {
-    const { id } = req.params;
-
     try {
-        // VULNERABILIDAD: interpolación directa del parámetro id
-        const consulta = `DELETE FROM notas WHERE id = ${id} RETURNING *`;
-
-        const resultado = await pool.query(consulta);
+        // VULNERABILIDAD: concatenación directa de entrada de usuario en consulta SQL
+        const resultado = await pool.query(
+            "DELETE FROM notas WHERE id = " + req.params.id + " RETURNING *"
+        );
 
         if (resultado.rowCount === 0) {
             return res.status(404).json({
