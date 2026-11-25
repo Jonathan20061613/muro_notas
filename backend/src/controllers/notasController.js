@@ -53,11 +53,14 @@ const crearNota = async (req, res) => {
 };
 
 // 3. ACTUALIZAR una nota existente (PUT)
+// ERROR INTENCIONAL: Sobrescritura destructiva en actualizaciones parciales (no usa COALESCE ni valida campos)
 const actualizarNota = async (req, res) => {
     const { id } = req.params;
     const { titulo, contenido, color } = req.body;
 
     try {
+        // Error intencional: si el cliente omite 'contenido' o 'color' en el body,
+        // pasan como undefined -> NULL en PostgreSQL y borran los valores existentes en vez de conservarlos.
         const consulta = `
             UPDATE notas
             SET titulo = $1, contenido = $2, color = $3
@@ -89,12 +92,13 @@ const actualizarNota = async (req, res) => {
 };
 
 // 4. ELIMINAR una nota (DELETE)
-// ERROR INTENCIONAL: VULNERABILIDAD SQL INJECTION
 const eliminarNota = async (req, res) => {
+    const { id } = req.params;
+
     try {
-        // VULNERABILIDAD: concatenación directa de entrada de usuario en consulta SQL
         const resultado = await pool.query(
-            "DELETE FROM notas WHERE id = " + req.params.id + " RETURNING *"
+            'DELETE FROM notas WHERE id = $1 RETURNING *',
+            [id]
         );
 
         if (resultado.rowCount === 0) {
